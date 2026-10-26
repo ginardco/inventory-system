@@ -1,73 +1,54 @@
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
-const app = express();
+const productRoutes = require("./routes/productRoutes");
+const saleRoutes = require("./routes/saleRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
-app.use(cors());
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+    ],
+  })
+);
+
 app.use(express.json());
 
-// Product Schema
-const productSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
-  },
-  category: {
-    type: String,
-    required: true
-  },
-  price: {
-    type: Number,
-    required: true
-  },
-  quantity: {
-    type: Number,
-    required: true
-  }
-});
-
-// Product Model
-const Product = mongoose.model("Product", productSchema);
-
-// Test Route
 app.get("/", (req, res) => {
-  res.send("Inventory System Backend is running!");
+  res.json({
+    success: true,
+    message: "Motor Shop Inventory API is running.",
+  });
 });
 
-// GET ALL PRODUCTS
-app.get("/api/products", async (req, res) => {
-  try {
-    const products = await Product.find();
-
-    res.status(200).json({
-      success: true,
-      count: products.length,
-      data: products
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
+app.get("/api/test", (req, res) => {
+  res.json({
+    success: true,
+    message: "API connection successful.",
+  });
 });
 
-// Connect MongoDB and Start Server
-const PORT = process.env.PORT || 5000;
+app.use("/api/products", productRoutes);
+app.use("/api/sales", saleRoutes);
+app.use("/api/ai", aiRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("MongoDB connected successfully");
+    console.log("MongoDB connected successfully.");
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`API URL: http://localhost:${PORT}/api/products`);
+      console.log(`Server running at http://localhost:${PORT}`);
     });
   })
   .catch((error) => {
     console.error("MongoDB connection failed:", error.message);
+    process.exit(1);
   });
