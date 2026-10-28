@@ -1,38 +1,44 @@
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+
 import "./AIInventoryAssistant.css";
 
 const API_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-const suggestions = [
-  "Which parts need restocking?",
-  "Show me out-of-stock products.",
-  "Summarize my inventory.",
-  "Analyze my recent sales.",
-];
-
 export default function AIInventoryAssistant() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [question, setQuestion] = useState("");
+  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Welcome to MotoAssist! Ask me about your spare parts, stock levels, or recorded sales.",
+      text: "Hi! I'm MotoAssist. Ask me about your inventory or low-stock products.",
     },
   ]);
   const [loading, setLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
 
-  async function sendQuestion(customQuestion) {
-    const text = (customQuestion ?? question).trim();
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
-    if (!text || loading) return;
+  // Automatically scroll to the latest message.
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, loading]);
+
+  async function sendMessage(text = message) {
+    const question = text.trim();
+
+    if (!question || loading) return;
 
     setMessages((previous) => [
       ...previous,
-      { role: "user", text },
+      { role: "user", text: question },
     ]);
-    setQuestion("");
+
+    setMessage("");
     setLoading(true);
 
     try {
@@ -41,25 +47,37 @@ export default function AIInventoryAssistant() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ question: text }),
+        body: JSON.stringify({ message: question }),
       });
 
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Unable to get an AI response.");
+      if (!response.ok || data.success === false) {
+        throw new Error(
+          data.reply ||
+            data.error ||
+            "AI request failed."
+        );
       }
 
       setMessages((previous) => [
         ...previous,
-        { role: "assistant", text: data.answer },
+        {
+          role: "assistant",
+          text:
+            data.reply ||
+            data.answer ||
+            "No response received.",
+        },
       ]);
     } catch (error) {
       setMessages((previous) => [
         ...previous,
         {
           role: "assistant",
-          text: `Sorry, I couldn't answer that. ${error.message}`,
+          text: `Sorry, ${
+            error.message || "Something went wrong."
+          } Please check the backend and try again.`,
         },
       ]);
     } finally {
@@ -67,24 +85,30 @@ export default function AIInventoryAssistant() {
     }
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    sendQuestion();
-  }
+  const suggestions = [
+    "Which products need restocking?",
+    "Summarize our inventory.",
+    "Which products are out of stock?",
+  ];
 
   return (
-    <div className="moto-ai">
+    <section className="moto-ai">
       {isOpen && (
-        <section
+        <div
           className="moto-ai-panel"
+          role="dialog"
           aria-label="MotoAssist AI chat"
         >
-          <header className="moto-ai-header">
+          {/* Chat Header */}
+          <div className="moto-ai-header">
             <div className="moto-ai-brand">
-              <div className="moto-ai-logo">M</div>
+              <div className="moto-ai-logo">
+                M
+              </div>
+
               <div>
-                <strong>MOTOASSIST</strong>
-                <span>AI INVENTORY ASSISTANT</span>
+                <strong>MotoAssist AI</strong>
+                <span>● Online</span>
               </div>
             </div>
 
@@ -92,86 +116,123 @@ export default function AIInventoryAssistant() {
               type="button"
               className="moto-ai-close"
               onClick={() => setIsOpen(false)}
-              aria-label="Close AI assistant"
+              aria-label="Close chat"
+              title="Close chat"
             >
               ×
             </button>
-          </header>
+          </div>
 
-          <div className="moto-ai-messages" aria-live="polite">
-            {messages.map((message, index) => (
+          {/* Chat Messages */}
+          <div
+            className="moto-ai-messages"
+            aria-live="polite"
+            aria-relevant="additions text"
+          >
+            {messages.map((item, index) => (
               <div
-                className={`moto-ai-message ${message.role}`}
-                key={`${message.role}-${index}`}
+                key={index}
+                className={`moto-ai-message ${item.role}`}
               >
-                <span className="moto-ai-role">
-                  {message.role === "assistant" ? "MOTOASSIST" : "YOU"}
-                </span>
-                <p>{message.text}</p>
+                <strong className="moto-ai-role">
+                  {item.role === "user"
+                    ? "You"
+                    : "MotoAssist"}
+                </strong>
+
+                <p>{item.text}</p>
               </div>
             ))}
 
             {loading && (
-              <div className="moto-ai-message assistant">
-                <span className="moto-ai-role">MOTOASSIST</span>
-                <p className="moto-ai-loading">Analyzing your shop data...</p>
+              <div
+                className="moto-ai-message assistant"
+                role="status"
+              >
+                <strong className="moto-ai-role">
+                  MotoAssist
+                </strong>
+
+                <p className="moto-ai-loading">
+                  MotoAssist is typing...
+                </p>
               </div>
             )}
+
+            <div ref={messagesEndRef} />
           </div>
 
-          {messages.length === 1 && (
-            <div className="moto-ai-suggestions">
-              <span>TRY ASKING</span>
-              {suggestions.map((suggestion) => (
-                <button
-                  type="button"
-                  key={suggestion}
-                  disabled={loading}
-                  onClick={() => sendQuestion(suggestion)}
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Suggested Questions */}
+          <div className="moto-ai-suggestions">
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                disabled={loading}
+                onClick={() => sendMessage(suggestion)}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
 
-          <form className="moto-ai-form" onSubmit={handleSubmit}>
+          {/* Message Input */}
+          <form
+            className="moto-ai-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              sendMessage();
+            }}
+          >
             <input
+              ref={inputRef}
               type="text"
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
+              value={message}
+              onChange={(event) =>
+                setMessage(event.target.value)
+              }
               placeholder="Ask about your inventory..."
-              maxLength={1000}
-              aria-label="Ask MotoAssist a question"
+              aria-label="Ask MotoAssist"
+              maxLength={2000}
               disabled={loading}
             />
 
             <button
               type="submit"
-              disabled={loading || !question.trim()}
+              disabled={loading || !message.trim()}
               aria-label="Send message"
+              title="Send message"
             >
-              {loading ? "..." : "➤"}
+              {loading ? "…" : "➤"}
             </button>
           </form>
 
+          {/* Disclaimer */}
           <div className="moto-ai-disclaimer">
-            AI responses may be inaccurate. Verify important decisions.
+            MotoAssist AI · MotorParts Inventory Assistant
           </div>
-        </section>
+        </div>
       )}
 
-      <button
-        type="button"
-        className="moto-ai-toggle"
-        onClick={() => setIsOpen((previous) => !previous)}
-        aria-label={isOpen ? "Close AI assistant" : "Open AI assistant"}
-      >
-        <span className="moto-ai-toggle-icon">
-          {isOpen ? "×" : "✦"}
-        </span>
-        <span>{isOpen ? "CLOSE ASSISTANT" : "ASK MOTOASSIST"}</span>
-      </button>
-    </div>
+      {/* Floating Chat Button */}
+      {!isOpen && (
+        <button
+          type="button"
+          className="moto-ai-toggle"
+          onClick={() => {
+            setIsOpen(true);
+            setTimeout(() => {
+              inputRef.current?.focus();
+            }, 0);
+          }}
+        >
+          <span className="moto-ai-toggle-icon">
+            💬
+          </span>
+
+          MotoAssist AI
+        </button>
+      )}
+    </section>
   );
 }

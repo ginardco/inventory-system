@@ -1,90 +1,142 @@
 
 const express = require("express");
-const OpenAI = require("openai");
 const Product = require("../models/Product");
 
 const router = express.Router();
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 router.post("/chat", async (req, res) => {
   try {
-    const { message } = req.body;
+    const message =
+      typeof req.body.message === "string"
+        ? req.body.message.trim()
+        : "";
 
-    if (!message || typeof message !== "string" || !message.trim()) {
+    if (!message) {
       return res.status(400).json({
         success: false,
-        message: "Please enter a question.",
+        reply: "Please enter a message.",
       });
     }
 
-    if (message.length > 2000) {
-      return res.status(400).json({
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("GEMINI_API_KEY is missing.");
+      return res.status(500).json({
         success: false,
-        message: "Please keep your question under 2,000 characters.",
+        reply: "Gemini is not configured. Please check the backend environment variables.",
       });
     }
 
+    // Load the official Gemini SDK (compatible with CommonJS projects).
+    const { GoogleGenAI } = await import("@google/genai");
+
+    const ai = new GoogleGenAI({
+      apiKey: process.env.GEMINI_API_KEY,
+    });
+
+    // Get actual inventory data from MongoDB.
     const products = await Product.find()
       .select("name category price quantity")
       .lean();
 
-    const inventorySummary = products.map((product) => ({
+    const inventory = products.map((product) => ({
       name: product.name,
       category: product.category,
-      price: product.price,
-      quantity: product.quantity,
-      status:
-        product.quantity === 0
-          ? "Out of stock"
-          : product.quantity < 10
-            ? "Critical stock"
-            : product.quantity < 16
-              ? "Low stock"
-              : "In stock",
+      price: Number(product.price) || 0,
+      quantity: Number(product.quantity) || 0,
     }));
 
-    const response = await client.responses.create({
-      model: process.env.OPENAI_MODEL || "gpt-6-astra",
-      instructions: `
-You are MotorParts AI, an assistant for a motorcycle spare-parts shop.
+    const totalUnits = inventory.reduce(
+      (total, product) => total + product.quantity,
+      0
+    );
 
-Help the user understand inventory, identify low-stock products,
-suggest restocking priorities, explain sales and inventory concepts,
-and answer questions clearly.
+    const inventoryValue = inventory.reduce(
+      (total, product) =>
+        total + product.price * product.quantity,
+      0
+    );
 
-Use the inventory data provided in the user's message for inventory
-questions. Do not invent product names, quantities, prices, or sales.
-If the available data does not answer a question, say so clearly.
+    // Keep stock thresholds consistent with the dashboard.
+    const lowStock = inventory.filter(
+      (product) =>
+        product.quantity >= 10 && product.quantity <= 15
+    );
 
-Stock rules:
-- 16 or more units: In stock
-- 10 to 15 units: Low stock
-- 1 to 9 units: Critical stock
-- 0 units: Out of stock
+    const criticalStock = inventory.filter(
+      (product) => product.quantity >= 1 && product.quantity <= 9
+    );
 
-Give practical recommendations in simple language.
-You cannot change inventory, record sales, or perform database actions.
-      `,
-      input: JSON.stringify({
-        question: message.trim(),
-        currentInventory: inventorySummary,
-      }),
-    });
+    const outOfStock = inventory.filter(
+      (product) => product.quantity === 0
+    );
+
+    const systemInstruction = `
+You are MotoAssist AI, the inventory assistant for MotorParts,
+a motorcycle spare parts inventory management system.
+
+Help users understand their inventory, stock levels, products,
+and restocking needs. Be friendly, concise, and easy to understand.
+
+IMPORTANT RULES:
+1. Use the supplied MongoDB inventory data as the source of truth.
+2. Never invent product names, quantities, prices, or sales figures.
+3. Do not claim to know sales trends because this request contains
+   inventory data only, not historical sales records.
+4. A quantity of 0 means Out of Stock.
+5. A quantity from 1 to 9 means Critical Stock.
+6. A quantity from 10 to 15 means Low Stock.
+7. A quantity of 16 or more means In Stock.
+8. Inventory value is calculated using selling price multiplied
+   by quantity. It is not profit or actual purchase cost.
+9. You may suggest restocking, but clearly label suggestions as
+   recommendations, not completed transactions.
+10. If the data does not answer a question, say so honestly.
+11. Format prices in Philippine pesos (₱).
+12. Do not claim you have changed, added, or deleted products.
+    Only the application can perform those operations.
+
+CURRENT INVENTORY SUMMARY:
+- Product types: ${inventory.length}
+- Total units: ${totalUnits}
+- Inventory selling value: ₱${inventoryValue.toFixed(2)}
+- Low stock products (10-15 units): ${lowStock.length}
+- Critical stock products (1-9 units): ${criticalStock.length}
+- Out of stock products: ${outOfStock.length}
+
+INVENTORY DATA:
+${JSON.stringify(inventory)}
+`;
+
+    const response = await ai.models.generateContent({
+  model: process.env.GEMINI_MODEL || "gemini-3.8-flash",
+  contents: message,
+  config: {
+    systemInstruction,
+    temperature: 0.3,
+    maxOutputTokens: 800,
+  },
+});
+
+    const reply =
+      response.text?.trim() ||
+      "Sorry, Gemini could not generate a response. Please try again.";
 
     return res.json({
       success: true,
-      reply: response.output_text || "I couldn't generate a response. Please try again.",
+      reply,
+      answer: reply,
     });
   } catch (error) {
-    console.error("AI assistant error:", error.message);
+    console.error("MotoAssist Gemini error:", {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+    });
 
     return res.status(500).json({
       success: false,
-      message:
-        "The AI assistant could not respond. Check your API key, model access, and server logs.",
+      reply:
+        "Sorry, MotoAssist could not process your request. Please check the Gemini API configuration and try again.",
     });
   }
 });

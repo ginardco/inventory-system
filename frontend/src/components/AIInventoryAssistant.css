@@ -1,59 +1,88 @@
 
+/* ========================================
+   MOTOASSIST AI CHATBOX
+   Messenger-Style Design
+======================================== */
+
 .moto-ai {
-  --ai-orange: #ff762f;
-  --ai-bg: #141619;
-  --ai-panel: #1c2024;
-  --ai-border: #353b41;
+  --ai-orange: #ff453f;
+  --ai-orange-hover: #e93630;
+  --ai-bg: #1c1f24;
+  --ai-panel: #292d33;
+  --ai-border: #363b43;
   --ai-text: #f0f2f4;
-  --ai-muted: #9da6ae;
+  --ai-muted: #a3abb5;
 
   position: fixed;
-  right: 26px;
-  bottom: 24px;
+  right: 24px;
+  bottom: 20px;
   z-index: 9999;
   color: var(--ai-text);
-  font-family: "DM Sans", sans-serif;
+  font-family: "DM Sans", Arial, sans-serif;
 }
+
+/* ========================================
+   CHAT WINDOW
+======================================== */
 
 .moto-ai-panel {
   display: flex;
   flex-direction: column;
-  width: min(390px, calc(100vw - 32px));
-  height: min(570px, calc(100dvh - 110px));
-  margin-bottom: 14px;
+
+  width: 380px;
+  height: 520px;
+
+  max-width: calc(100vw - 32px);
+  max-height: calc(100dvh - 100px);
+
+  margin-bottom: 12px;
   overflow: hidden;
+
   background: var(--ai-bg);
   border: 1px solid var(--ai-border);
-  border-radius: 13px;
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  border-radius: 18px;
+
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
 }
+
+/* ========================================
+   CHAT HEADER
+======================================== */
 
 .moto-ai-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 17px;
-  background: #0c0e10;
-  border-bottom: 2px solid var(--ai-orange);
+
+  padding: 14px 16px;
+
+  background: #17191d;
+  border-bottom: 1px solid var(--ai-border);
 }
 
 .moto-ai-brand {
   display: flex;
   align-items: center;
   gap: 11px;
+  min-width: 0;
 }
 
 .moto-ai-logo {
   display: grid;
-  width: 42px;
-  height: 42px;
+  flex-shrink: 0;
+
+  width: 40px;
+  height: 40px;
+
   place-items: center;
+
   color: #fff;
   background: var(--ai-orange);
-  border-radius: 7px;
-  font-family: "Barlow Condensed", sans-serif;
-  font-size: 26px;
+  border-radius: 50%;
+
+  font-family: "Barlow Condensed", Arial, sans-serif;
+  font-size: 24px;
   font-weight: 800;
 }
 
@@ -63,123 +92,243 @@
 }
 
 .moto-ai-brand strong {
-  font-family: "Barlow Condensed", sans-serif;
-  font-size: 21px;
-  letter-spacing: 1px;
+  color: #fff;
+
+  font-family: "Barlow Condensed", Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
 }
 
 .moto-ai-brand span {
   margin-top: 3px;
-  color: var(--ai-muted);
-  font-size: 9px;
-  letter-spacing: 1px;
+
+  color: #7fce8b;
+  font-size: 12px;
 }
+
+/* Close button */
 
 .moto-ai-close {
-  width: 32px;
-  height: 32px;
+  display: grid;
+  flex-shrink: 0;
+
+  width: 34px;
+  height: 34px;
+
+  place-items: center;
+
   color: #fff;
-  background: #272c31;
+  background: #292d33;
   border: 1px solid var(--ai-border);
-  border-radius: 5px;
-  font-size: 23px;
+  border-radius: 50%;
+
+  font-size: 21px;
+  cursor: pointer;
+
+  transition: background 0.2s ease;
 }
+
+.moto-ai-close:hover {
+  background: #41464e;
+}
+
+/* ========================================
+   MESSAGES AREA
+======================================== */
 
 .moto-ai-messages {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+
   min-height: 0;
-  padding: 15px;
+  gap: 12px;
+
+  padding: 16px 14px;
+
   overflow-y: auto;
+  overscroll-behavior: contain;
+
+  scrollbar-width: thin;
+  scrollbar-color: #4b515a transparent;
 }
+
+/* Individual message bubble */
 
 .moto-ai-message {
-  max-width: 94%;
-  margin-bottom: 14px;
-  padding: 11px 13px;
+  width: fit-content;
+  max-width: 85%;
+
+  margin: 0;
+  padding: 11px 14px;
+
   overflow-wrap: anywhere;
-  border: 1px solid var(--ai-border);
-  border-radius: 8px;
+
+  border: 1px solid transparent;
+  border-radius: 18px;
 }
+
+/* AI messages */
 
 .moto-ai-message.assistant {
+  align-self: flex-start;
+
   background: var(--ai-panel);
+  border-color: var(--ai-border);
+
+  border-bottom-left-radius: 5px;
 }
 
+/* User messages */
+
 .moto-ai-message.user {
-  margin-left: auto;
+  align-self: flex-end;
+
   color: #fff;
-  background: #59301e;
-  border-color: #804526;
+  background: var(--ai-orange);
+
+  border-bottom-right-radius: 5px;
 }
+
+/* Message sender name */
 
 .moto-ai-role {
   display: block;
-  margin-bottom: 6px;
-  color: var(--ai-orange);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 1px;
+
+  margin-bottom: 5px;
+
+  color: #ff8b82;
+  font-size: 12px;
+  font-weight: 700;
 }
+
+.moto-ai-message.user .moto-ai-role {
+  color: #fff0ee;
+}
+
+/* Message text */
 
 .moto-ai-message p {
   margin: 0;
+
   color: var(--ai-text);
-  font-size: 13px;
-  line-height: 1.65;
+
+  font-size: 14px;
+  line-height: 1.5;
+
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
+
+/* Loading message */
 
 .moto-ai-loading {
   color: var(--ai-muted) !important;
+  font-size: 12px !important;
 }
+
+/* ========================================
+   SUGGESTED QUESTIONS
+======================================== */
 
 .moto-ai-suggestions {
   display: flex;
-  flex-direction: column;
-  gap: 7px;
-  padding: 0 15px 13px;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  padding: 0 14px 12px;
+
+  background: var(--ai-bg);
 }
 
 .moto-ai-suggestions > span {
+  width: 100%;
+
   color: var(--ai-muted);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 1px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
+/* Suggested question buttons */
+
 .moto-ai-suggestions button {
-  padding: 9px 11px;
-  color: #dce1e5;
-  background: var(--ai-panel);
+  max-width: 100%;
+  padding: 9px 12px;
+
+  color: #f0f2f4;
+  background: #25292f;
+
   border: 1px solid var(--ai-border);
-  border-radius: 6px;
-  font-size: 11px;
+  border-radius: 18px;
+
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.4;
   text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .moto-ai-suggestions button:hover {
-  color: #fff;
+  background: #30353c;
   border-color: var(--ai-orange);
 }
 
+.moto-ai-suggestions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========================================
+   MESSAGE INPUT AREA
+======================================== */
+
 .moto-ai-form {
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 9px;
+
   padding: 12px;
-  background: #1b1f23;
+
+  background: #1b1e23;
   border-top: 1px solid var(--ai-border);
 }
 
+/* Text input */
+
 .moto-ai-form input {
   flex: 1;
+
+  width: 0;
   min-width: 0;
-  min-height: 42px;
-  padding: 10px;
+  min-height: 44px;
+
+  padding: 10px 15px;
+
   color: #fff !important;
-  background: #101214 !important;
+  background: #111316 !important;
+
   border: 1px solid var(--ai-border) !important;
-  border-radius: 6px !important;
-  font-size: 12px;
+  border-radius: 24px !important;
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+  box-shadow: none !important;
+
+  transition: border-color 0.2s ease;
+}
+
+.moto-ai-form input::placeholder {
+  color: #858d97;
+  opacity: 1;
 }
 
 .moto-ai-form input:focus {
@@ -187,53 +336,107 @@
   outline: none;
 }
 
+/* Send button */
+
 .moto-ai-form button {
-  width: 43px;
-  min-width: 43px;
+  display: grid;
+  flex-shrink: 0;
+
+  width: 42px;
+  height: 42px;
+
+  place-items: center;
+
   color: #fff;
   background: var(--ai-orange);
+
   border: none;
-  border-radius: 6px;
-  font-size: 19px;
+  border-radius: 50%;
+
+  font-family: inherit;
+  font-size: 18px;
   font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.moto-ai-form button:hover {
+  background: var(--ai-orange-hover);
+}
+
+.moto-ai-form button:active {
+  transform: scale(0.95);
 }
 
 .moto-ai-form button:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
 }
 
+/* ========================================
+   DISCLAIMER
+======================================== */
+
 .moto-ai-disclaimer {
-  padding: 0 12px 11px;
+  padding: 0 12px 10px;
+
   color: var(--ai-muted);
-  background: #1b1f23;
-  font-size: 9px;
+  background: #1b1e23;
+
+  font-size: 10px;
+  line-height: 1.4;
   text-align: center;
 }
+
+/* ========================================
+   FLOATING CHAT BUTTON
+======================================== */
 
 .moto-ai-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 9px;
+
   margin-left: auto;
   padding: 12px 17px;
+
   color: #fff;
   background: var(--ai-orange);
-  border: 1px solid #ff995f;
-  border-radius: 7px;
-  box-shadow: 0 7px 24px rgba(0, 0, 0, 0.35);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
+
+  border: 1px solid #ff7771;
+  border-radius: 26px;
+
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .moto-ai-toggle:hover {
-  background: #e85d1b;
+  background: var(--ai-orange-hover);
+  transform: translateY(-2px);
 }
 
 .moto-ai-toggle-icon {
-  font-size: 18px;
+  font-size: 19px;
+  line-height: 1;
 }
+
+/* ========================================
+   RESPONSIVE DESIGN - MOBILE
+======================================== */
 
 @media (max-width: 480px) {
   .moto-ai {
@@ -243,6 +446,101 @@
 
   .moto-ai-panel {
     width: calc(100vw - 24px);
-    height: min(560px, calc(100dvh - 90px));
+
+    height: min(520px, calc(100dvh - 90px));
+
+    max-width: none;
+    max-height: calc(100dvh - 90px);
+
+    margin-bottom: 10px;
+    border-radius: 16px;
+  }
+
+  .moto-ai-header {
+    padding: 12px;
+  }
+
+  .moto-ai-logo {
+    width: 36px;
+    height: 36px;
+    font-size: 21px;
+  }
+
+  .moto-ai-brand strong {
+    font-size: 17px;
+  }
+
+  .moto-ai-brand span {
+    font-size: 11px;
+  }
+
+  .moto-ai-messages {
+    gap: 10px;
+    padding: 14px 11px;
+  }
+
+  .moto-ai-message {
+    max-width: 90%;
+    padding: 10px 12px;
+  }
+
+  .moto-ai-message p {
+    font-size: 14px;
+  }
+
+  .moto-ai-suggestions {
+    gap: 7px;
+    padding: 0 11px 10px;
+  }
+
+  .moto-ai-suggestions button {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+
+  .moto-ai-form {
+    gap: 7px;
+    padding: 10px;
+  }
+
+  .moto-ai-form input {
+    min-height: 42px;
+    padding: 9px 13px;
+    font-size: 14px;
+  }
+
+  .moto-ai-form button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .moto-ai-toggle {
+    padding: 11px 15px;
+    font-size: 12px;
+  }
+}
+
+/* ========================================
+   SMALL MOBILE SCREENS
+======================================== */
+
+@media (max-width: 360px) {
+  .moto-ai {
+    right: 8px;
+    bottom: 8px;
+  }
+
+  .moto-ai-panel {
+    width: calc(100vw - 16px);
+    height: min(480px, calc(100dvh - 80px));
+    max-height: calc(100dvh - 80px);
+  }
+
+  .moto-ai-message {
+    max-width: 93%;
+  }
+
+  .moto-ai-message p {
+    font-size: 13px;
   }
 }
