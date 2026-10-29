@@ -16,6 +16,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://127.0.0.1:5173",
+      "https://motorparts-inventory-system.vercel.app",
       "https://motorparts-inventory-system-7u2myz30h-ginardco-4955.vercel.app",
     ],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
