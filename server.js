@@ -10,19 +10,22 @@ const aiRoutes = require("./routes/aiRoutes");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// CORS configuration
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "http://127.0.0.1:5173",
+      "https://motorparts-inventory-system-7u2myz30h-ginardco-4955.vercel.app",
     ],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 app.use(express.json());
-app.use(express.json());
-app.use("/api/ai", aiRoutes);
 
+// Home route
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -30,6 +33,7 @@ app.get("/", (req, res) => {
   });
 });
 
+// Test route
 app.get("/api/test", (req, res) => {
   res.json({
     success: true,
@@ -37,17 +41,19 @@ app.get("/api/test", (req, res) => {
   });
 });
 
+// API routes
 app.use("/api/products", productRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/ai", aiRoutes);
 
+// Connect to MongoDB
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected successfully.");
 
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
     });
   })
   .catch((error) => {
